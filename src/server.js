@@ -6,7 +6,7 @@ const FileSync = require('lowdb/adapters/FileSync');
 const { nanoid } = require('nanoid');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // DB setup
 const dbPath = path.join(__dirname, '..', 'data');
@@ -38,12 +38,12 @@ app.get('/api/patients/:id', (req, res) => {
   res.json(patient);
 });
 
-// List patients (editor only)
+// List patients
 app.get('/api/patients', (req, res) => {
   const patients = db.get('patients').value().map(p => ({
     id: p.id,
-    name: p.data?.patient?.name || 'Sin nombre',
-    dx: p.data?.patient?.dx || '',
+    name: p.data && p.data.patient ? p.data.patient.name : 'Sin nombre',
+    dx: p.data && p.data.patient ? p.data.patient.dx : '',
     createdAt: p.createdAt
   }));
   res.json(patients.reverse());
@@ -60,7 +60,6 @@ app.get('/p/:id', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'patient.html'));
 });
 
-// Editor route
 app.get('/editor', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'editor.html'));
 });
