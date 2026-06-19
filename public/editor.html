@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Editor — Dr. Moisés Aceves</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a1a;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e8e8e8;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20}
+.logo{height:40px;width:auto;object-fit:contain}
+.header-info{flex:1}
+.header-name{font-size:14px;font-weight:600;color:#1a1a1a}
+.header-sub{font-size:11px;color:#888}
+.container{max-width:600px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid #e8e8e8}
+.card-title{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px}
+.import-area{width:100%;min-height:140px;font-size:12px;padding:10px 12px;border:1px solid #ddd;border-radius:10px;background:#fafafa;color:#1a1a1a;font-family:monospace;outline:none;resize:vertical;line-height:1.5}
+.import-area:focus{border-color:#1a6cb0;background:#fff}
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px}
+.btn-blue{background:#1a6cb0;color:#fff}
+.btn-gray{background:#f0f2f5;color:#555;border:1px solid #ddd}
+.error{color:#c0392b;font-size:13px;margin-top:8px;text-align:center}
+.hint{font-size:12px;color:#aaa;margin-top:10px;line-height:1.6;text-align:center}
+.patient-list{display:flex;flex-direction:column;gap:8px}
+.patient-item{background:#f8f9fb;border-radius:10px;padding:12px 14px;border:1px solid #eee;display:flex;align-items:center;gap:12px}
+.patient-avatar{width:38px;height:38px;border-radius:50%;background:#1a6cb0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex-shrink:0}
+.patient-info{flex:1;min-width:0}
+.patient-name{font-size:14px;font-weight:600;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.patient-dx{font-size:11px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.patient-date{font-size:10px;color:#bbb;margin-top:2px}
+.patient-actions{display:flex;gap:8px;flex-shrink:0}
+.btn-icon{padding:6px 10px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-family:inherit;font-weight:500}
+.btn-share{background:#EBF4FF;color:#1a6cb0}
+.btn-del{background:#ffeaea;color:#c0392b}
+.empty{text-align:center;color:#bbb;padding:32px;font-size:13px}
+.success-box{background:#E6F7EE;border-radius:10px;padding:14px;margin-top:12px;display:none}
+.success-box.show{display:block}
+.success-label{font-size:12px;color:#1a7a3f;font-weight:600;margin-bottom:6px}
+.link-row{display:flex;gap:8px;align-items:center}
+.link-text{flex:1;font-size:13px;color:#1a4f8a;background:#d6f0e0;padding:8px 10px;border-radius:8px;word-break:break-all;border:none;font-family:monospace}
+.btn-copy{padding:8px 14px;background:#1a7a3f;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-shrink:0}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 22px;border-radius:22px;font-size:13px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:100;white-space:nowrap}
+.toast.show{opacity:1}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab-btn{flex:1;padding:9px;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.tab-btn.active{background:#1a6cb0;color:#fff}
+.tab-btn:not(.active){background:#f0f2f5;color:#555}
+</style>
+</head>
+<body>
+<div class="header">
+  <img class="logo" id="logoImg" src="" alt="Dr. Moisés Aceves">
+  <div class="header-info">
+    <div class="header-name">Dr. Moisés Aceves</div>
+    <div class="header-sub">Panel médico</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('nuevo')">+ Nuevo paciente</button>
+    <button class="tab-btn" onclick="showTab('lista')">📋 Mis pacientes</button>
+  </div>
+
+  <div id="tab-nuevo">
+    <div class="card">
+      <div class="card-title">Cargar plan del paciente</div>
+      <textarea class="import-area" id="jsonArea" placeholder='Pega aquí el JSON generado por Claude...'></textarea>
+      <div class="error" id="jsonError"></div>
+      <button class="btn btn-blue" id="saveBtn">💾 Guardar y generar link</button>
+      <div class="hint">Dile a Claude: <em>"Genera el JSON para la app con el plan de [nombre]"</em></div>
+      <div class="success-box" id="successBox">
+        <div class="success-label">✓ Link del paciente listo</div>
+        <div class="link-row">
+          <input class="link-text" id="linkText" readonly>
+          <button class="btn-copy" id="copyBtn">Copiar</button>
+        </div>
+        <button class="btn btn-gray" id="whatsappBtn" style="margin-top:8px">📱 Compartir por WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-lista" style="display:none">
+    <div class="card">
+      <div class="card-title">Pacientes guardados</div>
+      <div class="patient-list" id="patientList">
+        <div class="empty">Cargando...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Logo loaded separately to avoid base64 breaking JS parsing
+document.getElementById('logoImg').src='/logo.png';
+
+let currentLink = '';
+
+document.getElementById('saveBtn').addEventListener('click', savePatient);
+document.getElementById('copyBtn').addEventListener('click', copyLink);
+document.getElementById('whatsappBtn').addEventListener('click', shareWhatsApp);
+
+function showTab(tab) {
+  document.getElementById('tab-nuevo').style.display = tab==='nuevo' ? 'block' : 'none';
+  document.getElementById('tab-lista').style.display = tab==='lista' ? 'block' : 'none';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='nuevo')||(i===1&&tab==='lista')));
+  if (tab==='lista') loadPatients();
+}
+
+async function savePatient() {
+  const raw = document.getElementById('jsonArea').value.trim();
+  const err = document.getElementById('jsonError');
+  const box = document.getElementById('successBox');
+  err.textContent = ''; box.classList.remove('show');
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch(e) { err.textContent = 'JSON inválido. Copia el código completo que te dio Claude.'; return; }
+  try {
+    const resp = await fetch('/api/patients', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ data: parsed })
+    });
+    const result = await resp.json();
+    const fullUrl = window.location.origin + '/p/' + result.id;
+    currentLink = fullUrl;
+    document.getElementById('linkText').value = fullUrl;
+    box.classList.add('show');
+    document.getElementById('jsonArea').value = '';
+    showToast('✓ Paciente guardado');
+  } catch(e) {
+    err.textContent = 'Error al guardar: ' + e.message;
+  }
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(currentLink).then(() => showToast('✓ Link copiado'));
+}
+
+function shareWhatsApp() {
+  window.open('https://wa.me/?text=' + encodeURIComponent('Aquí está tu plan médico personalizado 👇
+' + currentLink + '
+
+Ábrelo en Safari para verlo completo.'));
+}
+
+async function loadPatients() {
+  const list = document.getElementById('patientList');
+  try {
+    const resp = await fetch('/api/patients');
+    const patients = await resp.json();
+    if (!patients.length) { list.innerHTML = '<div class="empty">Sin pacientes guardados aún</div>'; return; }
+    list.innerHTML = patients.map(p => {
+      const initials = (p.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      const date = new Date(p.createdAt).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
+      return '<div class="patient-item">' +
+        '<div class="patient-avatar">' + initials + '</div>' +
+        '<div class="patient-info">' +
+          '<div class="patient-name">' + p.name + '</div>' +
+          '<div class="patient-dx">' + (p.dx||'') + '</div>' +
+          '<div class="patient-date">' + date + '</div>' +
+        '</div>' +
+        '<div class="patient-actions">' +
+          '<button class="btn-icon btn-share" onclick="sharePatient('' + p.id + '')">🔗 Link</button>' +
+          '<button class="btn-icon btn-del" onclick="deletePatient('' + p.id + '')">🗑</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="empty">Error al cargar</div>';
+  }
+}
+
+function sharePatient(id) {
+  const url = window.location.origin + '/p/' + id;
+  navigator.clipboard.writeText(url).then(() => showToast('✓ Link copiado'));
+}
+
+async function deletePatient(id) {
+  if (!confirm('¿Eliminar este paciente?')) return;
+  await fetch('/api/patients/' + id, {method:'DELETE'});
+  showToast('Paciente eliminado');
+  loadPatients();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
