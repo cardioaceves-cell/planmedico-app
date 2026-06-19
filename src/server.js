@@ -6,7 +6,7 @@ const FileSync = require('lowdb/adapters/FileSync');
 const { nanoid } = require('nanoid');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 // DB setup
 const dbPath = path.join(__dirname, '..', 'data');
