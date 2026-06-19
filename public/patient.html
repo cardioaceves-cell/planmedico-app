@@ -83,7 +83,7 @@ let DATA = null;
 let currentTab = 0;
 
 // Load logo separately
-fetch('/logo').then(r=>r.text()).then(src=>{ if(src) document.getElementById('logoImg').src=src; });
+document.getElementById('logoImg').src='/logo.png';
 
 async function init() {
   const id = location.pathname.split('/').pop();
